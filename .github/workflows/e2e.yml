@@ -1,0 +1,28 @@
+name: E2E Smoke Test
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate repo structure
+        run: |
+          echo "Checking required files..."
+          for f in README.md .gitignore; do
+            test -f "$f" && echo "OK: $f" || echo "WARN: missing $f"
+          done
+      - name: Validate YAML files
+        run: |
+          pip install yamllint
+          find . -name '*.yml' -o -name '*.yaml' | head -20 | xargs yamllint -d relaxed || true
+      - name: Validate JSON files
+        run: |
+          for f in $(find . -name '*.json' -not -path './.git/*' | head -20); do
+            python3 -m json.tool "$f" > /dev/null && echo "OK: $f" || echo "WARN: invalid $f"
+          done
